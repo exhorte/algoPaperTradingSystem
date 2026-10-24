@@ -1,0 +1,4 @@
+Django==6.1.2
+massive==2.9.0
+python-decouple==3.8
+snaptrade-python-sdk==13.0.46

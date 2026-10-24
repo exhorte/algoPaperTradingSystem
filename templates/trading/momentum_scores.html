@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Momentum Scores - Momentum Trader{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pb-3 mb-4 border-bottom">
+    <h1 class="h2 mb-0">Momentum Scores</h1>
+    <div class="d-flex align-items-center gap-2">
+        {% if dates %}
+        <form method="get">
+            <select name="date" class="form-select" onchange="this.form.submit()">
+                {% for d in dates %}
+                    <option value="{{ d|date:'Y-m-d' }}" {% if d == calc_date %}selected{% endif %}>{{ d|date:"M j, Y" }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        {% endif %}
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="postAction(this, '{% url 'trading:recalculate_momentum' %}', 'Calculating...')">
+                <i class="bi bi-calculator"></i> Recalculate
+            </button>
+            <button class="btn btn-outline-secondary" onclick="window.location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center py-3">
+            <h5>Calculation Date</h5>
+            <div class="h3 mb-0">{{ calc_date|date:"M j, Y"|default:"-" }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center py-3">
+            <h5>Total Stocks</h5>
+            <div class="h3 mb-0">{{ total_stocks }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center py-3">
+            <h5>Top Quintile</h5>
+            <div class="h3 mb-0">{{ top_quintile_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">All Momentum Scores</h5></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-momentum mb-0">
+                <thead>
+                <tr><th>Rank</th><th>Ticker</th><th>Company Name</th><th>Momentum Score</th><th>Quintile</th><th>Top Quintile</th><th>Market Cap</th></tr>
+                </thead>
+                <tbody>
+                {% for score in scores %}
+                    <tr class="{% if score.is_top_quintile %}table-success{% endif %}">
+                        <td>{{ score.rank|default:"-" }}</td>
+                        <td><strong>{{ score.stock.ticker }}</strong></td>
+                        <td>{% if score.stock.name and score.stock.name != score.stock.ticker %}{{ score.stock.name }}{% else %}-{% endif %}</td>
+                        <td class="{% if score.momentum_score >= 0 %}text-success{% else %}text-danger{% endif %}">{{ score.momentum_score|floatformat:4 }}</td>
+                        <td>
+                            {% if score.quintile %}
+                            <span class="badge {% if score.quintile == 1 %}bg-success{% elif score.quintile == 5 %}bg-danger{% else %}bg-secondary{% endif %}">Q{{ score.quintile }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>
+                            {% if score.is_top_quintile %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                                <i class="bi bi-x-circle text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td>{% if score.stock.market_cap %}${{ score.stock.market_cap|floatformat:"0g" }}{% else %}-{% endif %}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted">No momentum data available</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

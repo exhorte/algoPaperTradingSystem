@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Create Portfolio - Momentum Trader{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pb-3 mb-4 border-bottom">
+    <h1 class="h2 mb-0">Create New Portfolio</h1>
+    <a href="{% url 'portfolio:list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Portfolios</a>
+</div>
+
+{% include "portfolio/_wizard_steps.html" with step=1 %}
+
+<form method="post" id="portfolio-form" class="col-xl-10 mx-auto">
+    {% csrf_token %}
+
+    {# Step 1: portfolio details #}
+    <div id="step-1">
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-briefcase"></i> Portfolio Details</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Portfolio Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control form-control-lg" id="name" name="name" maxlength="100"
+                                   placeholder="e.g., Growth Strategy 2025" value="{{ form.name }}" required>
+                            <div class="form-text">Choose a unique name for your portfolio.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="Describe your investment strategy and goals...">{{ form.description }}</textarea>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="bg-light rounded p-3">
+                            <h6><i class="bi bi-lightbulb text-warning"></i> Portfolio Tips</h6>
+                            <ul class="mb-0">
+                                <li>Choose a descriptive name</li>
+                                <li>Connect a real brokerage account</li>
+                                <li>Consider your risk tolerance</li>
+                                <li>Document your strategy</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+            <a href="{% url 'portfolio:list' %}" class="btn btn-secondary btn-lg">Cancel</a>
+            <button type="button" class="btn btn-primary btn-lg" onclick="goToStep(2)">Next <i class="bi bi-arrow-right"></i></button>
+        </div>
+    </div>
+
+    {# Step 2: connect brokerage via SnapTrade #}
+    <div id="step-2" class="d-none">
+        <div class="card mb-4">
+            <div class="card-header"><h5 class="mb-0"><i class="bi bi-link-45deg"></i> Connect Your Brokerage Account</h5></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="alert alert-info">
+                            <strong><i class="bi bi-info-circle"></i> Live Trading Integration</strong><br>
+                            Connect your brokerage account through SnapTrade to enable automated trading.
+                            We'll automatically fetch your account balance and positions.
+                        </div>
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Note:</strong>
+                            This requires valid SnapTrade API credentials configured in your environment.
+                            If not configured, you may see connection errors during authentication.
+                        </div>
+
+                        <h6>Supported Brokerages:</h6>
+                        <div class="row justify-content-center mb-3">
+                            <div class="col-md-6">
+                                <div class="card text-center py-3 broker-card" role="button" onclick="selectBroker(this)">
+                                    <div>Alpaca</div>
+                                    <strong>Alpaca</strong>
+                                    <small class="text-muted">Commission-free trading</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="connect-section" class="d-none">
+                            <div class="alert alert-warning">
+                                <i class="bi bi-shield-check"></i> You'll be redirected to SnapTrade to securely connect your account.
+                                Your credentials are never stored on our servers.
+                            </div>
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="bi bi-shield-lock"></i> Connect Securely via SnapTrade
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="bg-light rounded p-3 mb-3">
+                            <h6><i class="bi bi-lock-fill text-warning"></i> Security &amp; Privacy</h6>
+                            <ul class="mb-0">
+                                <li>Bank-level encryption</li>
+                                <li>Read-only account access</li>
+                                <li>No password storage</li>
+                                <li>Regulatory compliance</li>
+                                <li>Revoke access anytime</li>
+                            </ul>
+                        </div>
+                        <div class="bg-light rounded p-3">
+                            <h6><i class="bi bi-bar-chart-fill text-primary"></i> What We Access</h6>
+                            <ul class="mb-0">
+                                <li>Account balances</li>
+                                <li>Portfolio positions</li>
+                                <li>Trade execution</li>
+                                <li>Order status updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="btn btn-outline-secondary btn-lg" onclick="goToStep(1)"><i class="bi bi-arrow-left"></i> Previous</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function goToStep(step) {
+        if (step === 2) {
+            const name = document.getElementById('name');
+            if (!name.reportValidity()) { return; }
+        }
+        document.getElementById('step-1').classList.toggle('d-none', step !== 1);
+        document.getElementById('step-2').classList.toggle('d-none', step !== 2);
+        document.getElementById('wizard-progress').style.width = (step === 1 ? 33 : 66) + '%';
+        const label2 = document.getElementById('wizard-label-2');
+        label2.classList.toggle('text-primary', step === 2);
+        label2.classList.toggle('fw-semibold', step === 2);
+        label2.classList.toggle('text-muted', step !== 2);
+    }
+
+    function selectBroker(card) {
+        card.classList.add('border-primary', 'bg-primary-subtle');
+        document.getElementById('connect-section').classList.remove('d-none');
+    }
+
+    {% if messages %}goToStep(2);{% endif %}
+</script>
+{% endblock %}

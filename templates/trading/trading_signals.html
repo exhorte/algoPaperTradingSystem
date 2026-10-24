@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Trading Signals - Momentum Trader{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pb-3 mb-4 border-bottom">
+    <h1 class="h2 mb-0">Trading Signals</h1>
+    <div class="d-flex gap-2">
+        <div class="btn-group">
+            <a href="{% url 'trading:trading_signals' %}" class="btn btn-outline-primary {% if not signal_type %}active{% endif %}">All</a>
+            <a href="?type=buy" class="btn btn-outline-success {% if signal_type == 'BUY' %}active{% endif %}">Buy Signals</a>
+            <a href="?type=sell" class="btn btn-outline-danger {% if signal_type == 'SELL' %}active{% endif %}">Sell Signals</a>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-success" onclick="if (confirm('Generate new trading signals based on current momentum data? This may take a few moments.')) postAction(this, '{% url 'trading:generate_signals' %}', 'Generating...')">
+                <i class="bi bi-lightbulb"></i> Generate Signals
+            </button>
+            <button class="btn btn-outline-secondary" onclick="window.location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center py-3">
+            <h5>Total Signals</h5>
+            <div class="h3 mb-0">{{ total_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success text-center py-3">
+            <h5 class="text-success">Buy Signals</h5>
+            <div class="h3 mb-0 text-success">{{ buy_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger text-center py-3">
+            <h5 class="text-danger">Sell Signals</h5>
+            <div class="h3 mb-0 text-danger">{{ sell_count }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">Recent Trading Signals</h5></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                <tr><th>Date</th><th>Time</th><th>Ticker</th><th>Signal Type</th><th>Trade Size</th><th>Momentum Score</th><th>Price</th><th>Reason</th><th>Status</th><th>Action</th></tr>
+                </thead>
+                <tbody>
+                {% for signal in signals %}
+                    <tr>
+                        <td>{{ signal.signal_date|date:"M j, Y" }}</td>
+                        <td>{{ signal.created_at|time:"H:i" }}</td>
+                        <td><strong>{{ signal.stock.ticker }}</strong></td>
+                        <td>
+                            <span class="badge {% if signal.signal_type == 'BUY' %}bg-success{% elif signal.signal_type == 'SELL' %}bg-danger{% else %}bg-secondary{% endif %}">{{ signal.get_signal_type_display }}</span>
+                        </td>
+                        <td>
+                            {% if signal.target_value %}${{ signal.target_value|floatformat:"2g" }}
+                            {% elif signal.target_quantity %}{{ signal.target_quantity }} sh
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{% if signal.momentum_score %}{{ signal.momentum_score.momentum_score|floatformat:4 }}{% else %}-{% endif %}</td>
+                        <td>{% if signal.price %}${{ signal.price|floatformat:2 }}{% else %}-{% endif %}</td>
+                        <td>{{ signal.reason|default:"-" }}</td>
+                        <td>
+                            {% if signal.is_executed %}
+                                <span class="badge bg-primary">Executed</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'admin:trading_tradingsignal_change' signal.pk %}" class="btn btn-sm btn-outline-secondary" title="View in admin">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="10" class="text-center text-muted">No trading signals available</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

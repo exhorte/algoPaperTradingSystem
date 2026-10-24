@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Momentum Trader{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pb-3 mb-4 border-bottom">
+    <h1 class="h2 mb-0">Dashboard</h1>
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-outline-primary" onclick="postAction(this, '{% url 'trading:recalculate_momentum' %}', 'Calculating...')">
+            <i class="bi bi-calculator"></i> Recalculate Momentum
+        </button>
+        <span>Last updated: {{ calc_date|default:today|date:"F j, Y" }}</span>
+    </div>
+</div>
+
+{% if stats.total_stocks %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value">{{ stats.total_stocks }}</div>
+            <div class="stat-label">Total Stocks</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value {% if stats.mean_momentum >= 0 %}text-success{% else %}text-danger{% endif %}">{{ stats.mean_momentum|floatformat:3 }}</div>
+            <div class="stat-label">Mean Momentum</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value {% if stats.median_momentum >= 0 %}text-success{% else %}text-danger{% endif %}">{{ stats.median_momentum|floatformat:3 }}</div>
+            <div class="stat-label">Median Momentum</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value">{{ active_portfolios|length }}</div>
+            <div class="stat-label">Active Portfolios</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="mb-0">Top 10 Momentum Stocks</h5></div>
+            <div class="card-body">
+                {% if top_stocks %}
+                    {% include "trading/_momentum_table.html" with scores=top_stocks %}
+                {% else %}
+                    <p class="text-muted mb-0">No momentum data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="mb-0">Bottom 10 Momentum Stocks</h5></div>
+            <div class="card-body">
+                {% if bottom_stocks %}
+                    {% include "trading/_momentum_table.html" with scores=bottom_stocks %}
+                {% else %}
+                    <p class="text-muted mb-0">No momentum data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Recent Rebalance Events</h5></div>
+    <div class="card-body">
+        {% if rebalance_events %}
+        <table class="table mb-0">
+            <thead>
+            <tr><th>Date</th><th>Status</th><th>Stocks Analyzed</th><th>Buy Signals</th><th>Sell Signals</th><th>Portfolio Value</th></tr>
+            </thead>
+            <tbody>
+            {% for event in rebalance_events %}
+                <tr>
+                    <td>{{ event.date|date:"M j, Y" }}</td>
+                    <td>
+                        <span class="badge {% if event.execution_status == 'COMPLETED' %}bg-success{% elif event.execution_status == 'FAILED' %}bg-danger{% else %}bg-secondary{% endif %}" {% if event.error_message %}title="{{ event.error_message }}"{% endif %}>
+                            {{ event.get_execution_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ event.total_stocks_analyzed }}</td>
+                    <td class="text-success">{{ event.buy_signals_generated }}</td>
+                    <td class="text-danger">{{ event.sell_signals_generated }}</td>
+                    <td>{% if event.total_portfolio_value is not None %}${{ event.total_portfolio_value|floatformat:"2g" }}{% else %}-{% endif %}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="text-muted mb-0">No rebalance events yet</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Active Portfolios</h5></div>
+    <div class="card-body">
+        {% if active_portfolios %}
+        <table class="table mb-0">
+            <thead><tr><th>Name</th><th>Total Value</th><th>Cash</th><th>Updated</th></tr></thead>
+            <tbody>
+            {% for portfolio in active_portfolios %}
+                <tr>
+                    <td><a href="{% url 'portfolio:detail' portfolio.pk %}">{{ portfolio.name }}</a></td>
+                    <td>${{ portfolio.total_value|floatformat:"2g" }}</td>
+                    <td>${{ portfolio.current_cash|floatformat:"2g" }}</td>
+                    <td>{{ portfolio.updated_at|date:"M j, Y H:i" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="text-muted mb-0">No active portfolios</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+<table class="table table-momentum mb-0">
+    <thead><tr><th>Rank</th><th>Ticker</th><th>Momentum</th></tr></thead>
+    <tbody>
+    {% for score in scores %}
+        <tr>
+            <td>{{ score.rank|default:"-" }}</td>
+            <td><strong>{{ score.stock.ticker }}</strong></td>
+            <td class="{% if score.momentum_score >= 0 %}text-success{% else %}text-danger{% endif %}">{{ score.momentum_score|floatformat:3 }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

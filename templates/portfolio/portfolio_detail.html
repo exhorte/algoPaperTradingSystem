@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ portfolio.name }} - Momentum Trader{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap align-items-center pb-3 mb-4 border-bottom">
+    <div>
+        <h1 class="h2 mb-0">{{ portfolio.name }}</h1>
+        {% if portfolio.description %}<p class="text-muted mb-0">{{ portfolio.description }}</p>{% endif %}
+    </div>
+    <div class="d-flex gap-2">
+        {% if is_connected %}
+        <form method="post" action="{% url 'portfolio:sync' portfolio.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-primary"><i class="bi bi-arrow-repeat"></i> Sync Positions</button>
+        </form>
+        <form method="post" action="{% url 'portfolio:rebalance' portfolio.pk %}"
+              onsubmit="return confirm('Run a full momentum rebalance? This places real orders on the connected brokerage account.');">
+            {% csrf_token %}
+            <button class="btn btn-success"><i class="bi bi-shuffle"></i> Rebalance</button>
+        </form>
+        {% endif %}
+        <a href="{% url 'portfolio:list' %}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Portfolios</a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value">${{ portfolio.total_value|floatformat:"2g" }}</div>
+            <div class="stat-label">Total Value</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value">${{ portfolio.current_cash|floatformat:"2g" }}</div>
+            <div class="stat-label">Cash</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value">{{ positions|length }}</div>
+            <div class="stat-label">Positions</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card text-center py-3">
+            <div class="stat-value {% if is_connected %}text-success{% else %}text-secondary{% endif %}">
+                <i class="bi {% if is_connected %}bi-link-45deg{% else %}bi-x-circle{% endif %}"></i>
+            </div>
+            <div class="stat-label">{% if is_connected %}Connected{% else %}Not Connected{% endif %}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Positions</h5></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead><tr><th>Ticker</th><th>Quantity</th><th>Avg Cost</th><th>Price</th><th>Value</th><th>Unrealized P&amp;L</th></tr></thead>
+                <tbody>
+                {% for pos in positions %}
+                    <tr>
+                        <td><strong>{{ pos.stock.ticker }}</strong></td>
+                        <td>{{ pos.quantity }}</td>
+                        <td>${{ pos.average_cost|floatformat:2 }}</td>
+                        <td>{% if pos.current_price %}${{ pos.current_price|floatformat:2 }}{% else %}-{% endif %}</td>
+                        <td>${{ pos.current_value|floatformat:"2g" }}</td>
+                        <td class="{% if pos.unrealized_pnl >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ pos.unrealized_pnl|floatformat:"2g" }} ({{ pos.unrealized_pnl_percent|floatformat:2 }}%)
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted">No open positions</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header"><h5 class="mb-0">Recent Trades</h5></div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead><tr><th>Date</th><th>Ticker</th><th>Type</th><th>Quantity</th><th>Order Value</th><th>Status</th></tr></thead>
+                <tbody>
+                {% for trade in trades %}
+                    <tr>
+                        <td>{{ trade.created_at|date:"M j, Y H:i" }}</td>
+                        <td><strong>{{ trade.stock.ticker }}</strong></td>
+                        <td><span class="badge {% if trade.trade_type == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">{{ trade.get_trade_type_display }}</span></td>
+                        <td>{{ trade.filled_quantity|default:trade.quantity }}</td>
+                        <td>{% if trade.order_value %}${{ trade.order_value|floatformat:"2g" }}{% else %}-{% endif %}</td>
+                        <td><span class="badge bg-secondary" {% if trade.error_message %}title="{{ trade.error_message }}"{% endif %}>{{ trade.get_status_display }}</span></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted">No trades yet</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

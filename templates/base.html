@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Momentum Trader{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .sidebar { min-height: 100vh; }
+        .sidebar .nav-link { font-size: 1.05rem; padding: .5rem 1rem; }
+        .sidebar .nav-link.active { font-weight: 600; }
+        .stat-card .stat-value { font-size: 2.25rem; font-weight: 600; }
+        .stat-card .stat-label { text-transform: uppercase; color: var(--bs-secondary-color); }
+        .table-momentum td, .table-momentum th { vertical-align: middle; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-3 col-lg-2 sidebar bg-light pt-4 px-3">
+            <h4 class="mb-4">Momentum Trader</h4>
+            {% with url_name=request.resolver_match.url_name ns=request.resolver_match.namespace %}
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if ns == 'trading' and url_name == 'dashboard' %}active{% endif %}" href="{% url 'trading:dashboard' %}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if url_name == 'momentum_scores' %}active{% endif %}" href="{% url 'trading:momentum_scores' %}">
+                        <i class="bi bi-graph-up"></i> Momentum Scores
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if url_name == 'trading_signals' %}active{% endif %}" href="{% url 'trading:trading_signals' %}">
+                        <i class="bi bi-bell"></i> Trading Signals
+                    </a>
+                </li>
+            </ul>
+            <hr>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if ns == 'portfolio' %}active{% endif %}" href="{% url 'portfolio:list' %}">
+                        <i class="bi bi-briefcase"></i> Portfolios
+                    </a>
+                </li>
+            </ul>
+            {% endwith %}
+        </nav>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // POST to a JSON endpoint, alert the result, then reload the page.
+    async function postAction(button, url, busyLabel) {
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="bi bi-arrow-repeat"></i> ' + busyLabel;
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            });
+            const data = await response.json();
+            alert(data.success ? data.message : 'Error: ' + data.error);
+            if (data.success) { window.location.reload(); }
+        } catch (err) {
+            alert('Error: ' + err);
+        } finally {
+            button.disabled = false;
+            button.innerHTML = original;
+        }
+    }
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

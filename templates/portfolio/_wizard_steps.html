@@ -1,0 +1,11 @@
+{# Progress bar of the creation wizard; expects `step` (1, 2 or 3). #}
+<div class="mb-4">
+    <div class="progress mb-2" style="height: 4px;">
+        <div class="progress-bar" id="wizard-progress" style="width: {% if step == 1 %}33{% elif step == 2 %}66{% else %}100{% endif %}%;"></div>
+    </div>
+    <div class="d-flex justify-content-between">
+        <span id="wizard-label-1" class="{% if step >= 1 %}text-primary fw-semibold{% else %}text-muted{% endif %}">Portfolio Details</span>
+        <span id="wizard-label-2" class="{% if step >= 2 %}text-primary fw-semibold{% else %}text-muted{% endif %}">Connect Brokerage</span>
+        <span id="wizard-label-3" class="{% if step >= 3 %}text-primary fw-semibold{% else %}text-muted{% endif %}">Review &amp; Create</span>
+    </div>
+</div>
